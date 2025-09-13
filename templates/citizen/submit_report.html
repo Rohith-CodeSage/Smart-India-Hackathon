@@ -289,8 +289,8 @@
             mapDiv.innerHTML = '<div id="mapContainer" style="height: 200px; width: 100%;"></div>';
             
             // Default to a central location (you can change this to your city)
-            const defaultLat = 40.7128;
-            const defaultLng = -74.0060;
+            const defaultLat = 40.7589;
+            const defaultLng = -73.9851;
             
             this.map = L.map('mapContainer').setView([defaultLat, defaultLng], 13);
             
@@ -298,16 +298,22 @@
                 attribution: '© OpenStreetMap contributors'
             }).addTo(this.map);
             
-            // Add instruction
-            const popup = L.popup()
-                .setLatLng([defaultLat, defaultLng])
-                .setContent('Click on the map to set report location')
-                .openOn(this.map);
+            // Add instruction popup
+            setTimeout(() => {
+                const popup = L.popup()
+                    .setLatLng([defaultLat, defaultLng])
+                    .setContent('Click anywhere on the map to set your report location')
+                    .openOn(this.map);
+            }, 500);
             
             // Allow clicking on map to set location
             this.map.on('click', (e) => {
                 this.updateLocationFromMap(e.latlng);
             });
+            
+            // Update status
+            const status = document.getElementById('locationStatus');
+            status.innerHTML = '<i class="fas fa-info-circle text-info"></i> Click on the map to set location';
         }
         
         updateLocationFromMap(latlng) {
@@ -399,9 +405,11 @@
                 });
 
                 console.log('Response status:', response.status);
+                const responseText = await response.text();
+                console.log('Response text:', responseText);
                 
                 if (response.ok) {
-                    const responseData = await response.json();
+                    const responseData = JSON.parse(responseText);
                     console.log('Success response:', responseData);
                     showToast('Report submitted successfully!', 'success');
                     setTimeout(() => {
@@ -410,9 +418,9 @@
                 } else {
                     let errorData;
                     try {
-                        errorData = await response.json();
+                        errorData = JSON.parse(responseText);
                     } catch (parseError) {
-                        errorData = { error: 'Server error occurred' };
+                        errorData = { error: responseText || 'Server error occurred' };
                     }
                     console.error('API Error:', errorData);
                     throw new Error(errorData.error || errorData.message || 'Failed to submit report');
@@ -451,8 +459,8 @@
             if (!lat || !lng) {
                 missing.push('location');
                 const locationStatus = document.getElementById('locationStatus');
-                locationStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Location is required';
-                showToast('Please set your location by clicking "Use My Current Location" or clicking on the map.', 'error');
+                locationStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Location is required - click "Use My Current Location" or "Show Map"';
+                showToast('Please set your location by using GPS or clicking on the map.', 'error');
             } else {
                 // Validate coordinate values
                 const latNum = parseFloat(lat);
@@ -469,7 +477,17 @@
             console.log('Missing fields:', missing);
 
             if (missing.length > 0) {
-                showToast('Please fill in all required fields', 'error');
+                const missingFieldNames = missing.map(field => {
+                    const labels = {
+                        'title': 'Title',
+                        'description': 'Description', 
+                        'category': 'Category',
+                        'address': 'Address',
+                        'location': 'Location'
+                    };
+                    return labels[field] || field;
+                });
+                showToast(`Please fill in: ${missingFieldNames.join(', ')}`, 'error');
                 return false;
             }
 

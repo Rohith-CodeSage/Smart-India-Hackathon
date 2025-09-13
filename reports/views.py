@@ -226,6 +226,8 @@ def create_report_session(request):
         return JsonResponse({'error': 'Authentication required'}, status=401)
     
     try:
+        import json
+        
         # Get form data
         title = request.POST.get('title')
         description = request.POST.get('description')
@@ -233,12 +235,23 @@ def create_report_session(request):
         address = request.POST.get('address')
         latitude = request.POST.get('latitude')
         longitude = request.POST.get('longitude')
-        priority = request.POST.get('priority', 'low')
+        priority = request.POST.get('priority', 'medium')
         image = request.FILES.get('image')
+        
+        print(f"Received data: title={title}, category={category}, lat={latitude}, lng={longitude}")
         
         # Validate required fields
         if not all([title, description, category, address, latitude, longitude]):
-            return JsonResponse({'error': 'Missing required fields'}, status=400)
+            missing_fields = []
+            if not title: missing_fields.append('title')
+            if not description: missing_fields.append('description')
+            if not category: missing_fields.append('category')
+            if not address: missing_fields.append('address')
+            if not latitude: missing_fields.append('latitude')
+            if not longitude: missing_fields.append('longitude')
+            return JsonResponse({
+                'error': f'Missing required fields: {", ".join(missing_fields)}'
+            }, status=400)
         
         # Validate latitude and longitude
         try:
@@ -250,6 +263,16 @@ def create_report_session(request):
                 return JsonResponse({'error': 'Invalid longitude value'}, status=400)
         except (ValueError, TypeError):
             return JsonResponse({'error': 'Invalid coordinate values'}, status=400)
+        
+        # Validate category
+        valid_categories = ['pothole', 'trash', 'streetlight', 'water', 'drainage', 'road', 'other']
+        if category not in valid_categories:
+            return JsonResponse({'error': 'Invalid category'}, status=400)
+        
+        # Validate priority
+        valid_priorities = ['low', 'medium', 'high', 'urgent']
+        if priority not in valid_priorities:
+            priority = 'medium'
         
         # Create report
         report = Report.objects.create(
@@ -263,6 +286,8 @@ def create_report_session(request):
             reported_by=request.user,
             image=image
         )
+        
+        print(f"Report created successfully: ID={report.id}")
         
         return JsonResponse({
             'id': report.id,
