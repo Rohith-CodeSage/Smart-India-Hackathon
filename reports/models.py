@@ -66,14 +66,14 @@ class Report(models.Model):
     
     # Location data
     latitude = models.DecimalField(
-        max_digits=10, 
-        decimal_places=6,
+        max_digits=15, 
+        decimal_places=12,
         validators=[MinValueValidator(-90), MaxValueValidator(90)],
         help_text="Latitude coordinate (-90 to 90)"
     )
     longitude = models.DecimalField(
-        max_digits=10, 
-        decimal_places=6,
+        max_digits=15, 
+        decimal_places=12,
         validators=[MinValueValidator(-180), MaxValueValidator(180)],
         help_text="Longitude coordinate (-180 to 180)"
     )
