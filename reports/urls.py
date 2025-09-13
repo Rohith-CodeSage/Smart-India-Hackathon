@@ -7,8 +7,8 @@ router.register('reports', ReportViewSet, basename='report')
 router.register('departments', DepartmentViewSet, basename='department')
 
 urlpatterns = [
-    path('', include(router.urls)),
-    # Session-based endpoints for frontend compatibility
+    # Session-based endpoints for frontend compatibility (must be before router)
     path('reports/create/', create_report_session, name='create_report_session'),
     path('reports/user/', get_user_reports, name='get_user_reports'),
+    path('', include(router.urls)),
 ]

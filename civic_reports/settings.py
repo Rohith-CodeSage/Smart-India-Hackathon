@@ -154,6 +154,14 @@ REST_FRAMEWORK = {
 # CORS settings
 CORS_ALLOW_ALL_ORIGINS = True
 
+# CSRF settings for Replit environment
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.replit.dev',
+    'https://*.pike.replit.dev',
+    'https://*.replit.app',
+    'https://*.replit.co',
+]
+
 # Allow Replit web view
 X_FRAME_OPTIONS = 'ALLOWALL'
 
