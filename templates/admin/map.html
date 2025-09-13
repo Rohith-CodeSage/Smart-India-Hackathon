@@ -304,7 +304,11 @@ class ReportMap {
 
         } catch (error) {
             console.error('Error loading reports:', error);
-            showToast('Failed to load map data', 'error');
+            if (typeof showToast === 'function') {
+                showToast('Failed to load map data', 'error');
+            } else {
+                alert('Failed to load map data');
+            }
         }
     }
 
@@ -598,7 +602,7 @@ class ReportMap {
 
     updateStats() {
         const total = this.filteredReports.length;
-        const pending = this.filteredReports.filter(r => r.status === 'pending').length;
+        const pending = this.filteredReports.filter(r => r.status === 'submitted').length;
         const inProgress = this.filteredReports.filter(r => r.status === 'in_progress').length;
         const resolved = this.filteredReports.filter(r => r.status === 'resolved').length;
         
