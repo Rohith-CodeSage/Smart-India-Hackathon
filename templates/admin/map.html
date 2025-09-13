@@ -293,9 +293,31 @@ class ReportMap {
             this.reports = data.results || data;
             this.filteredReports = [...this.reports];
 
-            this.updateMapMarkers();
-            this.updateStats();
-            this.centerMapOnReports();
+            console.log('Reports loaded:', this.reports.length);
+            
+            try {
+                this.updateMapMarkers();
+                console.log('Map markers updated successfully');
+            } catch (e) {
+                console.error('Error in updateMapMarkers:', e);
+                throw e;
+            }
+            
+            try {
+                this.updateStats();
+                console.log('Stats updated successfully');
+            } catch (e) {
+                console.error('Error in updateStats:', e);
+                throw e;
+            }
+            
+            try {
+                this.centerMapOnReports();
+                console.log('Map centered successfully');
+            } catch (e) {
+                console.error('Error in centerMapOnReports:', e);
+                throw e;
+            }
 
             // Highlight specific report if requested
             if (this.highlightReportId) {
