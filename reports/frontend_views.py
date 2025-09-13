@@ -20,7 +20,7 @@ def login_view(request):
     """Render login page"""
     if request.user.is_authenticated:
         if request.user.is_admin():
-            return redirect('/admin/dashboard/')
+            return redirect('/management/dashboard/')
         else:
             return redirect('/citizen/dashboard/')
     return render(request, 'auth/login.html')
@@ -76,7 +76,7 @@ def logout_view(request):
 def home_view(request):
     """Redirect to appropriate dashboard based on user role"""
     if request.user.is_admin():
-        return redirect('/admin/dashboard/')
+        return redirect('/management/dashboard/')
     else:
         return redirect('/citizen/dashboard/')
 
@@ -85,7 +85,7 @@ def home_view(request):
 def citizen_dashboard(request):
     """Citizen dashboard - shows user's reports"""
     if request.user.is_admin():
-        return redirect('/admin/dashboard/')
+        return redirect('/management/dashboard/')
     return render(request, 'citizen/dashboard.html', {
         'user': request.user
     })
@@ -95,7 +95,7 @@ def citizen_dashboard(request):
 def citizen_submit_report(request):
     """Citizen report submission form"""
     if request.user.is_admin():
-        return redirect('/admin/dashboard/')
+        return redirect('/management/dashboard/')
     return render(request, 'citizen/submit_report.html', {
         'user': request.user
     })
