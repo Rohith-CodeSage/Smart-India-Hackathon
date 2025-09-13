@@ -177,7 +177,7 @@ class AuthManager {
 
         } catch (error) {
             console.error('Token refresh error:', error);
-            this.logout();
+            // Don't force logout on JWT failure - session might still be valid
             return null;
         }
     }

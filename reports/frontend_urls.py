@@ -20,9 +20,5 @@ urlpatterns = [
     path('citizen/dashboard/', frontend_views.citizen_dashboard, name='citizen_dashboard'),
     path('citizen/submit/', frontend_views.citizen_submit_report, name='citizen_submit'),
     
-    # Admin URLs
-    path('admin/dashboard/', frontend_views.admin_dashboard, name='admin_dashboard'),
-    path('admin/reports/', frontend_views.admin_reports, name='admin_reports'),
-    path('admin/analytics/', frontend_views.admin_analytics, name='admin_analytics'),
-    path('admin/map/', frontend_views.admin_map_view, name='admin_map'),
+    # Admin URLs are now handled at project level with /management/ prefix
 ]

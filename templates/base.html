@@ -24,16 +24,16 @@
             <div class="nav-menu" id="nav-menu">
                 {% if user.is_authenticated %}
                     {% if user.is_admin %}
-                        <a href="/admin/dashboard/" class="nav-link">
+                        <a href="/management/dashboard/" class="nav-link">
                             <i class="fas fa-tachometer-alt"></i> Dashboard
                         </a>
-                        <a href="/admin/reports/" class="nav-link">
+                        <a href="/management/reports/" class="nav-link">
                             <i class="fas fa-list"></i> All Reports
                         </a>
-                        <a href="/admin/analytics/" class="nav-link">
+                        <a href="/management/analytics/" class="nav-link">
                             <i class="fas fa-chart-bar"></i> Analytics
                         </a>
-                        <a href="/admin/map/" class="nav-link">
+                        <a href="/management/map/" class="nav-link">
                             <i class="fas fa-map"></i> Map View
                         </a>
                     {% else %}

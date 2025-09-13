@@ -162,6 +162,12 @@ CSRF_TRUSTED_ORIGINS = [
     'https://*.replit.co',
 ]
 
+# Cookie settings for Replit embedded environment
+SESSION_COOKIE_SAMESITE = 'None'
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SAMESITE = 'None'
+CSRF_COOKIE_SECURE = True
+
 # Allow Replit web view
 X_FRAME_OPTIONS = 'ALLOWALL'
 

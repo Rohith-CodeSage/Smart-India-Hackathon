@@ -30,11 +30,11 @@ urlpatterns = [
     path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/auth/token/verify/', TokenVerifyView.as_view(), name='token_verify'),
     
-    # Admin frontend routes at project level for guaranteed precedence
-    path('admin/dashboard/', frontend_views.admin_dashboard, name='admin_dashboard'),
-    path('admin/reports/', frontend_views.admin_reports, name='admin_reports'),
-    path('admin/analytics/', frontend_views.admin_analytics, name='admin_analytics'),
-    path('admin/map/', frontend_views.admin_map_view, name='admin_map'),
+    # Management frontend routes at project level for guaranteed precedence
+    path('management/dashboard/', frontend_views.admin_dashboard, name='admin_dashboard'),
+    path('management/reports/', frontend_views.admin_reports, name='admin_reports'),
+    path('management/analytics/', frontend_views.admin_analytics, name='admin_analytics'),
+    path('management/map/', frontend_views.admin_map_view, name='admin_map'),
     
     path('', include('reports.frontend_urls')),
     path('api/', include('reports.urls')),
