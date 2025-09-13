@@ -383,7 +383,7 @@ class Analytics {
                 queryParams.append('department', this.filters.department);
             }
 
-            const response = await fetch(`/api/analytics/?${queryParams}`, {
+            const response = await fetch(`/api/reports/analytics/?${queryParams}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

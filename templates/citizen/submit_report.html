@@ -10,6 +10,7 @@
 
         <div class="card-body">
             <form id="reportForm" enctype="multipart/form-data">
+                {% csrf_token %}
                 <!-- Category Selection -->
                 <div class="form-group">
                     <label for="category" class="form-label">
@@ -396,7 +397,7 @@
                     console.log(key, value);
                 }
 
-                const response = await fetch('/api/reports/create/', {
+                const response = await fetch('/api/reports/', {
                     method: 'POST',
                     body: formData,
                     headers: {
