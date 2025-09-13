@@ -278,10 +278,10 @@ class ReportMap {
 
     async loadReports() {
         try {
-            const token = localStorage.getItem('authToken');
             const response = await fetch('/api/reports/', {
+                credentials: 'include',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'X-CSRFToken': this.getCookie('csrftoken')
                 }
             });
 
@@ -443,7 +443,7 @@ class ReportMap {
                 </div>
                 <div class="popup-body">
                     <p><strong>Category:</strong> ${this.formatCategory(report.category)}</p>
-                    <p><strong>Citizen:</strong> ${report.citizen.username}</p>
+                    <p><strong>Citizen:</strong> ${report.reported_by}</p>
                     <p><strong>Date:</strong> ${date}</p>
                     <p><strong>Description:</strong> ${report.description.substring(0, 100)}${report.description.length > 100 ? '...' : ''}</p>
                 </div>
@@ -506,7 +506,7 @@ class ReportMap {
                     ${this.getPriorityBadge(report.priority)}
                 </div>
                 <p><strong>Category:</strong> ${this.formatCategory(report.category)}</p>
-                <p><strong>Citizen:</strong> ${report.citizen.username}</p>
+                <p><strong>Citizen:</strong> ${report.reported_by}</p>
                 <p><strong>Date:</strong> ${date}</p>
                 <p><strong>Address:</strong> ${report.address}</p>
                 <div class="selected-report-actions">
@@ -625,6 +625,21 @@ class ReportMap {
         if (total > 100) {
             console.log(`Loading markers: ${processed}/${total} (${elapsed}ms)`);
         }
+    }
+
+    getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
 }
 
@@ -838,6 +853,150 @@ document.addEventListener('DOMContentLoaded', () => {
         width: 100%;
         margin-bottom: 5px;
     }
+}
+
+/* Custom Map Marker Styles */
+.custom-marker {
+    background: none;
+    border: none;
+}
+
+.marker-pin {
+    width: 30px;
+    height: 40px;
+    border-radius: 50% 50% 50% 0;
+    position: relative;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -20px 0 0 -15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.marker-pin:after {
+    content: '';
+    width: 14px;
+    height: 14px;
+    margin: -7px 0 0 -7px;
+    background: white;
+    position: absolute;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.marker-pin i {
+    position: relative;
+    transform: rotate(45deg);
+    z-index: 2;
+    color: white;
+    font-size: 12px;
+}
+
+/* Report Popup Styles */
+.report-popup {
+    min-width: 250px;
+}
+
+.popup-header h6 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+}
+
+.popup-badges {
+    margin-bottom: 10px;
+}
+
+.popup-badges .badge {
+    margin-right: 5px;
+    font-size: 10px;
+}
+
+.popup-body p {
+    margin: 4px 0;
+    font-size: 12px;
+}
+
+.popup-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.popup-actions .btn {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+/* Legend Styles */
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 12px;
+}
+
+.legend-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 2px solid;
+    flex-shrink: 0;
+}
+
+.legend-marker.pending {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+.legend-marker.in-progress {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.legend-marker.resolved {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.legend-marker.closed {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.legend-marker.high-priority {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.legend-marker.cluster {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+    border-radius: 4px;
+}
+
+/* Map Control Styles */
+.leaflet-control-custom {
+    background: white;
+    border-radius: 4px;
+    border: 2px solid rgba(0,0,0,0.2);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.4);
+}
+
+.map-control-stats {
+    padding: 8px;
+    font-size: 12px;
+}
+
+.control-title {
+    font-weight: bold;
+    margin-bottom: 4px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 4px;
 }
 </style>
 {% endblock %}
