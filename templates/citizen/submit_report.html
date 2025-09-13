@@ -81,9 +81,14 @@
                         </div>
                         <div class="col-md-6">
                             <div id="locationMap" class="location-map">
-                                <p class="text-center text-muted">
-                                    <i class="fas fa-map"></i><br> Click "Use My Current Location" to show map
-                                </p>
+                                <div class="map-placeholder">
+                                    <i class="fas fa-map"></i>
+                                    <p>Click "Use My Current Location" to show map</p>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.reportSubmission.showDefaultMap()">
+                                        <i class="fas fa-map-marked-alt"></i>
+                                        Show Map
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -229,13 +234,20 @@
                     },
                     (error) => {
                         console.error('Geolocation error:', error);
-                        status.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Unable to get location. Please enter address manually.';
+                        status.innerHTML = '<i class="fas fa-exclamation-triangle text-warning"></i> Unable to get location. You can click on the map to set location.';
+                        this.showDefaultMap();
                         btn.innerHTML = '<i class="fas fa-crosshairs"></i> Try Again';
                         btn.disabled = false;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 60000
                     }
                 );
             } else {
                 status.innerHTML = '<i class="fas fa-times text-danger"></i> Geolocation not supported';
+                this.showDefaultMap();
                 btn.innerHTML = '<i class="fas fa-crosshairs"></i> Use My Current Location';
                 btn.disabled = false;
             }
@@ -260,6 +272,70 @@
                 .addTo(this.map)
                 .bindPopup('Report location')
                 .openPopup();
+            
+            // Allow clicking on map to update location
+            this.map.on('click', (e) => {
+                this.updateLocationFromMap(e.latlng);
+            });
+        }
+        
+        showDefaultMap() {
+            const mapDiv = document.getElementById('locationMap');
+            
+            if (this.map) {
+                this.map.remove();
+            }
+            
+            mapDiv.innerHTML = '<div id="mapContainer" style="height: 200px; width: 100%;"></div>';
+            
+            // Default to a central location (you can change this to your city)
+            const defaultLat = 40.7128;
+            const defaultLng = -74.0060;
+            
+            this.map = L.map('mapContainer').setView([defaultLat, defaultLng], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(this.map);
+            
+            // Add instruction
+            const popup = L.popup()
+                .setLatLng([defaultLat, defaultLng])
+                .setContent('Click on the map to set report location')
+                .openOn(this.map);
+            
+            // Allow clicking on map to set location
+            this.map.on('click', (e) => {
+                this.updateLocationFromMap(e.latlng);
+            });
+        }
+        
+        updateLocationFromMap(latlng) {
+            this.userLocation = {
+                lat: latlng.lat,
+                lng: latlng.lng
+            };
+            
+            document.getElementById('latitude').value = this.userLocation.lat;
+            document.getElementById('longitude').value = this.userLocation.lng;
+            
+            // Remove existing marker
+            if (this.marker) {
+                this.map.removeLayer(this.marker);
+            }
+            
+            // Add new marker
+            this.marker = L.marker([this.userLocation.lat, this.userLocation.lng])
+                .addTo(this.map)
+                .bindPopup('Report location')
+                .openPopup();
+            
+            // Update status
+            const status = document.getElementById('locationStatus');
+            status.innerHTML = '<i class="fas fa-check text-success"></i> Location set from map';
+            
+            // Try to get address
+            this.reverseGeocode();
         }
 
         async reverseGeocode() {
@@ -322,13 +398,22 @@
                     }
                 });
 
+                console.log('Response status:', response.status);
+                
                 if (response.ok) {
+                    const responseData = await response.json();
+                    console.log('Success response:', responseData);
                     showToast('Report submitted successfully!', 'success');
                     setTimeout(() => {
                         window.location.href = '/citizen/dashboard/';
                     }, 1500);
                 } else {
-                    const errorData = await response.json();
+                    let errorData;
+                    try {
+                        errorData = await response.json();
+                    } catch (parseError) {
+                        errorData = { error: 'Server error occurred' };
+                    }
                     console.error('API Error:', errorData);
                     throw new Error(errorData.error || errorData.message || 'Failed to submit report');
                 }
@@ -365,10 +450,20 @@
 
             if (!lat || !lng) {
                 missing.push('location');
-                document.getElementById('getLocationBtn').classList.add('error');
-                showToast('Please use "Use My Current Location" to detect your location for the report.', 'error');
+                const locationStatus = document.getElementById('locationStatus');
+                locationStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Location is required';
+                showToast('Please set your location by clicking "Use My Current Location" or clicking on the map.', 'error');
             } else {
-                document.getElementById('getLocationBtn').classList.remove('error');
+                // Validate coordinate values
+                const latNum = parseFloat(lat);
+                const lngNum = parseFloat(lng);
+                
+                if (isNaN(latNum) || isNaN(lngNum) || latNum < -90 || latNum > 90 || lngNum < -180 || lngNum > 180) {
+                    missing.push('location');
+                    const locationStatus = document.getElementById('locationStatus');
+                    locationStatus.innerHTML = '<i class="fas fa-exclamation-triangle text-danger"></i> Invalid location coordinates';
+                    showToast('Invalid location coordinates. Please set location again.', 'error');
+                }
             }
 
             console.log('Missing fields:', missing);
@@ -400,7 +495,7 @@
 
     // Initialize when page loads
     document.addEventListener('DOMContentLoaded', () => {
-        new ReportSubmission();
+        window.reportSubmission = new ReportSubmission();
     });
 </script>
 
@@ -456,6 +551,22 @@
         align-items: center;
         justify-content: center;
         background: var(--background-light);
+    }
+    
+    .map-placeholder {
+        text-align: center;
+        padding: 20px;
+    }
+    
+    .map-placeholder i {
+        font-size: 2rem;
+        color: #ccc;
+        margin-bottom: 10px;
+    }
+    
+    .map-placeholder p {
+        color: #666;
+        margin-bottom: 15px;
     }
     
     .radio-group {

@@ -240,14 +240,25 @@ def create_report_session(request):
         if not all([title, description, category, address, latitude, longitude]):
             return JsonResponse({'error': 'Missing required fields'}, status=400)
         
+        # Validate latitude and longitude
+        try:
+            lat_val = float(latitude)
+            lng_val = float(longitude)
+            if not (-90 <= lat_val <= 90):
+                return JsonResponse({'error': 'Invalid latitude value'}, status=400)
+            if not (-180 <= lng_val <= 180):
+                return JsonResponse({'error': 'Invalid longitude value'}, status=400)
+        except (ValueError, TypeError):
+            return JsonResponse({'error': 'Invalid coordinate values'}, status=400)
+        
         # Create report
         report = Report.objects.create(
             title=title,
             description=description,
             category=category,
             address=address,
-            latitude=float(latitude),
-            longitude=float(longitude),
+            latitude=lat_val,
+            longitude=lng_val,
             priority=priority,
             reported_by=request.user,
             image=image
@@ -259,6 +270,9 @@ def create_report_session(request):
         }, status=201)
         
     except Exception as e:
+        import traceback
+        print(f"Error creating report: {str(e)}")
+        print(traceback.format_exc())
         return JsonResponse({'error': str(e)}, status=500)
 
 
