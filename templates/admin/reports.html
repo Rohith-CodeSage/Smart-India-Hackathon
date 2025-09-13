@@ -1,0 +1,929 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Reports - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <h1>
+                <i class="fas fa-list"></i>
+                Manage Reports
+            </h1>
+            <p>Review, assign, and manage citizen-submitted reports</p>
+        </div>
+        <div class="page-actions">
+            <button id="bulkActionBtn" class="btn btn-secondary" disabled>
+                <i class="fas fa-tasks"></i>
+                Bulk Actions
+            </button>
+            <a href="/admin/dashboard/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Status</label>
+                    <select id="statusFilter" class="form-control">
+                        <option value="">All Statuses</option>
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select id="categoryFilter" class="form-control">
+                        <option value="">All Categories</option>
+                        <option value="pothole">Potholes</option>
+                        <option value="streetlight">Street Lighting</option>
+                        <option value="garbage">Garbage Collection</option>
+                        <option value="water">Water Issues</option>
+                        <option value="noise">Noise Complaint</option>
+                        <option value="graffiti">Graffiti</option>
+                        <option value="traffic">Traffic Issues</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Priority</label>
+                    <select id="priorityFilter" class="form-control">
+                        <option value="">All Priorities</option>
+                        <option value="high">High</option>
+                        <option value="medium">Medium</option>
+                        <option value="low">Low</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="Search reports...">
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="form-label">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" id="dateFrom" class="form-control">
+                        <span class="input-group-text">to</span>
+                        <input type="date" id="dateTo" class="form-control">
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <button id="applyFilters" class="btn btn-primary me-2">
+                        <i class="fas fa-filter"></i>
+                        Apply Filters
+                    </button>
+                    <button id="clearFilters" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                        Clear
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reports Table -->
+    <div class="card">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span id="reportCount">Loading...</span>
+                </div>
+                <div class="table-actions">
+                    <button id="refreshBtn" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-sync"></i>
+                        Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th>ID</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Citizen</th>
+                            <th>Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportsTableBody">
+                        <!-- Dynamic content will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div id="loadingState" class="text-center p-4">
+                <i class="fas fa-spinner fa-spin"></i>
+                Loading reports...
+            </div>
+            
+            <div id="emptyState" class="text-center p-4" style="display: none;">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h4>No Reports Found</h4>
+                <p class="text-muted">No reports match your current filters.</p>
+            </div>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="card-footer">
+            <nav aria-label="Reports pagination">
+                <ul id="pagination" class="pagination justify-content-center mb-0">
+                    <!-- Dynamic pagination will be loaded here -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Report Detail Modal -->
+<div class="modal fade" id="reportModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt"></i>
+                    Report Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="reportModalBody">
+                <!-- Dynamic content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" id="saveChangesBtn" class="btn btn-primary">
+                    <i class="fas fa-save"></i>
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Action Modal -->
+<div class="modal fade" id="bulkModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-tasks"></i>
+                    Bulk Actions
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Selected <span id="selectedCount">0</span> reports</p>
+                <div class="form-group">
+                    <label class="form-label">Action</label>
+                    <select id="bulkAction" class="form-control">
+                        <option value="">Select action</option>
+                        <option value="status">Change Status</option>
+                        <option value="department">Assign Department</option>
+                        <option value="delete">Delete Reports</option>
+                    </select>
+                </div>
+                <div id="bulkActionValue" style="display: none;">
+                    <!-- Dynamic content based on selected action -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" id="executeBulkAction" class="btn btn-primary">
+                    <i class="fas fa-check"></i>
+                    Execute
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+class ReportManager {
+    constructor() {
+        this.reports = [];
+        this.currentPage = 1;
+        this.pageSize = 10;
+        this.totalCount = 0;
+        this.selectedReports = new Set();
+        this.filters = {};
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.loadReports();
+    }
+
+    setupEventListeners() {
+        // Filter controls
+        document.getElementById('applyFilters').addEventListener('click', () => {
+            this.applyFilters();
+        });
+
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            this.clearFilters();
+        });
+
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.loadReports();
+        });
+
+        // Bulk selection
+        document.getElementById('selectAll').addEventListener('change', (e) => {
+            this.toggleSelectAll(e.target.checked);
+        });
+
+        document.getElementById('bulkActionBtn').addEventListener('click', () => {
+            this.showBulkModal();
+        });
+
+        // Bulk action modal
+        document.getElementById('bulkAction').addEventListener('change', (e) => {
+            this.updateBulkActionValue(e.target.value);
+        });
+
+        document.getElementById('executeBulkAction').addEventListener('click', () => {
+            this.executeBulkAction();
+        });
+
+        // Save changes in detail modal
+        document.getElementById('saveChangesBtn').addEventListener('click', () => {
+            this.saveReportChanges();
+        });
+
+        // Search on Enter
+        document.getElementById('searchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                this.applyFilters();
+            }
+        });
+    }
+
+    async loadReports() {
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const tableBody = document.getElementById('reportsTableBody');
+
+        loadingState.style.display = 'block';
+        emptyState.style.display = 'none';
+        tableBody.innerHTML = '';
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const queryParams = new URLSearchParams({
+                page: this.currentPage,
+                page_size: this.pageSize,
+                ...this.filters
+            });
+
+            const response = await fetch(`/api/reports/?${queryParams}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load reports');
+            }
+
+            const data = await response.json();
+            this.reports = data.results || data;
+            this.totalCount = data.count || this.reports.length;
+
+            this.renderReports();
+            this.renderPagination();
+            this.updateReportCount();
+
+            loadingState.style.display = 'none';
+
+            if (this.reports.length === 0) {
+                emptyState.style.display = 'block';
+            }
+
+        } catch (error) {
+            console.error('Error loading reports:', error);
+            loadingState.style.display = 'none';
+            showToast('Failed to load reports', 'error');
+        }
+    }
+
+    renderReports() {
+        const tableBody = document.getElementById('reportsTableBody');
+        const rows = this.reports.map(report => this.createReportRow(report)).join('');
+        tableBody.innerHTML = rows;
+
+        // Setup individual row event listeners
+        tableBody.querySelectorAll('.report-checkbox').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                this.toggleReportSelection(checkbox.value, checkbox.checked);
+            });
+        });
+
+        tableBody.querySelectorAll('.view-report').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const reportId = e.target.closest('button').dataset.reportId;
+                this.showReportDetail(reportId);
+            });
+        });
+
+        tableBody.querySelectorAll('.quick-status').forEach(select => {
+            select.addEventListener('change', (e) => {
+                const reportId = e.target.dataset.reportId;
+                this.updateReportStatus(reportId, e.target.value);
+            });
+        });
+    }
+
+    createReportRow(report) {
+        const statusClass = this.getStatusClass(report.status);
+        const priorityClass = this.getPriorityClass(report.priority);
+        const date = new Date(report.created_at).toLocaleDateString();
+
+        return `
+            <tr>
+                <td>
+                    <input type="checkbox" class="form-check-input report-checkbox" value="${report.id}">
+                </td>
+                <td>
+                    <strong>#${report.id}</strong>
+                </td>
+                <td>
+                    <div class="report-title">
+                        ${report.title}
+                        ${report.image ? '<i class="fas fa-camera text-muted ms-1" title="Has image"></i>' : ''}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${this.formatCategory(report.category)}</span>
+                </td>
+                <td>
+                    <select class="form-control form-control-sm quick-status ${statusClass}" 
+                            data-report-id="${report.id}">
+                        <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>Pending</option>
+                        <option value="in_progress" ${report.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                        <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                        <option value="closed" ${report.status === 'closed' ? 'selected' : ''}>Closed</option>
+                    </select>
+                </td>
+                <td>
+                    <span class="badge ${priorityClass}">${report.priority.toUpperCase()}</span>
+                </td>
+                <td>
+                    <div class="citizen-info">
+                        <strong>${report.citizen.username}</strong>
+                        <br>
+                        <small class="text-muted">${report.citizen.email}</small>
+                    </div>
+                </td>
+                <td>
+                    <div class="date-info">
+                        ${date}
+                        <br>
+                        <small class="text-muted">${this.getTimeAgo(report.created_at)}</small>
+                    </div>
+                </td>
+                <td>
+                    <div class="btn-group">
+                        <button class="btn btn-sm btn-outline-primary view-report" 
+                                data-report-id="${report.id}"
+                                data-bs-toggle="modal" data-bs-target="#reportModal">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary" 
+                                onclick="window.open('/admin/map/?report=${report.id}', '_blank')">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    getStatusClass(status) {
+        const classes = {
+            'pending': 'status-pending',
+            'in_progress': 'status-progress',
+            'resolved': 'status-resolved',
+            'closed': 'status-closed'
+        };
+        return classes[status] || '';
+    }
+
+    getPriorityClass(priority) {
+        const classes = {
+            'high': 'bg-danger',
+            'medium': 'bg-warning',
+            'low': 'bg-success'
+        };
+        return classes[priority] || 'bg-secondary';
+    }
+
+    formatCategory(category) {
+        return category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    getTimeAgo(dateString) {
+        const date = new Date(dateString);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffDays = Math.floor(diffHours / 24);
+
+        if (diffDays > 7) {
+            return date.toLocaleDateString();
+        } else if (diffDays > 0) {
+            return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+        } else if (diffHours > 0) {
+            return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+        } else {
+            return 'Less than an hour ago';
+        }
+    }
+
+    applyFilters() {
+        this.filters = {};
+        
+        const status = document.getElementById('statusFilter').value;
+        const category = document.getElementById('categoryFilter').value;
+        const priority = document.getElementById('priorityFilter').value;
+        const search = document.getElementById('searchInput').value;
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+
+        if (status) this.filters.status = status;
+        if (category) this.filters.category = category;
+        if (priority) this.filters.priority = priority;
+        if (search) this.filters.search = search;
+        if (dateFrom) this.filters.date_from = dateFrom;
+        if (dateTo) this.filters.date_to = dateTo;
+
+        this.currentPage = 1;
+        this.loadReports();
+    }
+
+    clearFilters() {
+        document.getElementById('statusFilter').value = '';
+        document.getElementById('categoryFilter').value = '';
+        document.getElementById('priorityFilter').value = '';
+        document.getElementById('searchInput').value = '';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        
+        this.filters = {};
+        this.currentPage = 1;
+        this.loadReports();
+    }
+
+    toggleReportSelection(reportId, selected) {
+        if (selected) {
+            this.selectedReports.add(reportId);
+        } else {
+            this.selectedReports.delete(reportId);
+        }
+        this.updateBulkActionButton();
+    }
+
+    toggleSelectAll(selected) {
+        const checkboxes = document.querySelectorAll('.report-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selected;
+            this.toggleReportSelection(checkbox.value, selected);
+        });
+    }
+
+    updateBulkActionButton() {
+        const bulkBtn = document.getElementById('bulkActionBtn');
+        bulkBtn.disabled = this.selectedReports.size === 0;
+        
+        if (this.selectedReports.size > 0) {
+            bulkBtn.innerHTML = `<i class="fas fa-tasks"></i> Bulk Actions (${this.selectedReports.size})`;
+        } else {
+            bulkBtn.innerHTML = '<i class="fas fa-tasks"></i> Bulk Actions';
+        }
+    }
+
+    showBulkModal() {
+        document.getElementById('selectedCount').textContent = this.selectedReports.size;
+        const modal = new bootstrap.Modal(document.getElementById('bulkModal'));
+        modal.show();
+    }
+
+    updateBulkActionValue(action) {
+        const container = document.getElementById('bulkActionValue');
+        let html = '';
+
+        switch (action) {
+            case 'status':
+                html = `
+                    <label class="form-label">New Status</label>
+                    <select id="bulkStatusValue" class="form-control">
+                        <option value="pending">Pending</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                `;
+                break;
+            case 'department':
+                html = `
+                    <label class="form-label">Department</label>
+                    <select id="bulkDepartmentValue" class="form-control">
+                        <option value="1">Public Works</option>
+                        <option value="2">Transportation</option>
+                        <option value="3">Environmental</option>
+                        <option value="4">Public Safety</option>
+                    </select>
+                `;
+                break;
+            case 'delete':
+                html = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Warning:</strong> This action cannot be undone. Are you sure you want to delete these reports?
+                    </div>
+                `;
+                break;
+        }
+
+        container.innerHTML = html;
+        container.style.display = action ? 'block' : 'none';
+    }
+
+    async executeBulkAction() {
+        const action = document.getElementById('bulkAction').value;
+        if (!action || this.selectedReports.size === 0) return;
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const reportIds = Array.from(this.selectedReports);
+            
+            let payload = { report_ids: reportIds };
+            
+            switch (action) {
+                case 'status':
+                    payload.status = document.getElementById('bulkStatusValue').value;
+                    break;
+                case 'department':
+                    payload.assigned_department = document.getElementById('bulkDepartmentValue').value;
+                    break;
+            }
+
+            const endpoint = action === 'delete' ? '/api/reports/bulk_delete/' : '/api/reports/bulk_update/';
+            
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                showToast(`Successfully updated ${reportIds.length} reports`, 'success');
+                bootstrap.Modal.getInstance(document.getElementById('bulkModal')).hide();
+                this.selectedReports.clear();
+                this.loadReports();
+            } else {
+                throw new Error('Bulk action failed');
+            }
+
+        } catch (error) {
+            console.error('Bulk action error:', error);
+            showToast('Failed to execute bulk action', 'error');
+        }
+    }
+
+    async showReportDetail(reportId) {
+        const modalBody = document.getElementById('reportModalBody');
+        modalBody.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/reports/${reportId}/`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load report details');
+            }
+
+            const report = await response.json();
+            modalBody.innerHTML = this.createReportDetailHTML(report);
+
+        } catch (error) {
+            console.error('Error loading report details:', error);
+            modalBody.innerHTML = '<div class="text-center text-danger">Failed to load report details</div>';
+        }
+    }
+
+    createReportDetailHTML(report) {
+        const date = new Date(report.created_at).toLocaleString();
+        const imageHTML = report.image ? 
+            `<div class="mb-3">
+                <label class="form-label">Image</label>
+                <div>
+                    <img src="${report.image}" alt="Report image" class="img-fluid" style="max-height: 300px;">
+                </div>
+            </div>` : '';
+
+        return `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Report ID</label>
+                        <input type="text" class="form-control" value="#${report.id}" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" id="editTitle" class="form-control" value="${report.title}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Category</label>
+                        <select id="editCategory" class="form-control">
+                            <option value="pothole" ${report.category === 'pothole' ? 'selected' : ''}>Potholes</option>
+                            <option value="streetlight" ${report.category === 'streetlight' ? 'selected' : ''}>Street Lighting</option>
+                            <option value="garbage" ${report.category === 'garbage' ? 'selected' : ''}>Garbage Collection</option>
+                            <option value="water" ${report.category === 'water' ? 'selected' : ''}>Water Issues</option>
+                            <option value="noise" ${report.category === 'noise' ? 'selected' : ''}>Noise Complaint</option>
+                            <option value="graffiti" ${report.category === 'graffiti' ? 'selected' : ''}>Graffiti</option>
+                            <option value="traffic" ${report.category === 'traffic' ? 'selected' : ''}>Traffic Issues</option>
+                            <option value="other" ${report.category === 'other' ? 'selected' : ''}>Other</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select id="editStatus" class="form-control">
+                            <option value="pending" ${report.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="in_progress" ${report.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="resolved" ${report.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+                            <option value="closed" ${report.status === 'closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select id="editPriority" class="form-control">
+                            <option value="low" ${report.priority === 'low' ? 'selected' : ''}>Low</option>
+                            <option value="medium" ${report.priority === 'medium' ? 'selected' : ''}>Medium</option>
+                            <option value="high" ${report.priority === 'high' ? 'selected' : ''}>High</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned Department</label>
+                        <select id="editDepartment" class="form-control">
+                            <option value="">Unassigned</option>
+                            <option value="1" ${report.assigned_department === 1 ? 'selected' : ''}>Public Works</option>
+                            <option value="2" ${report.assigned_department === 2 ? 'selected' : ''}>Transportation</option>
+                            <option value="3" ${report.assigned_department === 3 ? 'selected' : ''}>Environmental</option>
+                            <option value="4" ${report.assigned_department === 4 ? 'selected' : ''}>Public Safety</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Citizen</label>
+                        <input type="text" class="form-control" value="${report.citizen.username} (${report.citizen.email})" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Created</label>
+                        <input type="text" class="form-control" value="${date}" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Description</label>
+                <textarea id="editDescription" class="form-control" rows="4">${report.description}</textarea>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Location</label>
+                <textarea class="form-control" rows="2" readonly>${report.address}</textarea>
+                <small class="text-muted">Coordinates: ${report.latitude}, ${report.longitude}</small>
+            </div>
+            ${imageHTML}
+            <input type="hidden" id="editReportId" value="${report.id}">
+        `;
+    }
+
+    async saveReportChanges() {
+        const reportId = document.getElementById('editReportId').value;
+        const data = {
+            title: document.getElementById('editTitle').value,
+            description: document.getElementById('editDescription').value,
+            category: document.getElementById('editCategory').value,
+            status: document.getElementById('editStatus').value,
+            priority: document.getElementById('editPriority').value,
+            assigned_department: document.getElementById('editDepartment').value || null
+        };
+
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/reports/${reportId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                showToast('Report updated successfully', 'success');
+                bootstrap.Modal.getInstance(document.getElementById('reportModal')).hide();
+                this.loadReports();
+            } else {
+                throw new Error('Failed to update report');
+            }
+
+        } catch (error) {
+            console.error('Error updating report:', error);
+            showToast('Failed to update report', 'error');
+        }
+    }
+
+    async updateReportStatus(reportId, newStatus) {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch(`/api/reports/${reportId}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus })
+            });
+
+            if (response.ok) {
+                showToast('Status updated successfully', 'success');
+            } else {
+                throw new Error('Failed to update status');
+            }
+
+        } catch (error) {
+            console.error('Error updating status:', error);
+            showToast('Failed to update status', 'error');
+            this.loadReports(); // Reload to revert changes
+        }
+    }
+
+    renderPagination() {
+        const pagination = document.getElementById('pagination');
+        const totalPages = Math.ceil(this.totalCount / this.pageSize);
+        
+        if (totalPages <= 1) {
+            pagination.innerHTML = '';
+            return;
+        }
+
+        let html = '';
+        
+        // Previous button
+        if (this.currentPage > 1) {
+            html += `<li class="page-item">
+                        <a class="page-link" href="#" data-page="${this.currentPage - 1}">Previous</a>
+                     </li>`;
+        }
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === this.currentPage || 
+                i === 1 || 
+                i === totalPages || 
+                (i >= this.currentPage - 2 && i <= this.currentPage + 2)) {
+                html += `<li class="page-item ${i === this.currentPage ? 'active' : ''}">
+                            <a class="page-link" href="#" data-page="${i}">${i}</a>
+                         </li>`;
+            } else if (i === this.currentPage - 3 || i === this.currentPage + 3) {
+                html += `<li class="page-item disabled">
+                            <span class="page-link">...</span>
+                         </li>`;
+            }
+        }
+
+        // Next button
+        if (this.currentPage < totalPages) {
+            html += `<li class="page-item">
+                        <a class="page-link" href="#" data-page="${this.currentPage + 1}">Next</a>
+                     </li>`;
+        }
+
+        pagination.innerHTML = html;
+
+        // Add click listeners
+        pagination.querySelectorAll('a.page-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.currentPage = parseInt(e.target.dataset.page);
+                this.loadReports();
+            });
+        });
+    }
+
+    updateReportCount() {
+        const countElement = document.getElementById('reportCount');
+        const start = (this.currentPage - 1) * this.pageSize + 1;
+        const end = Math.min(this.currentPage * this.pageSize, this.totalCount);
+        
+        countElement.textContent = `Showing ${start}-${end} of ${this.totalCount} reports`;
+    }
+}
+
+// Initialize when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new ReportManager();
+});
+</script>
+
+<style>
+.page-header {
+    display: flex;
+    justify-content: between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+}
+
+.page-title h1 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.page-title p {
+    margin: 0.5rem 0 0 0;
+    color: var(--text-muted);
+}
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.report-title {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.citizen-info,
+.date-info {
+    font-size: 14px;
+}
+
+.quick-status {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+.status-pending { background-color: #fff3cd; }
+.status-progress { background-color: #d1ecf1; }
+.status-resolved { background-color: #d4edda; }
+.status-closed { background-color: #e2e3e5; }
+
+.table-actions {
+    display: flex;
+    gap: 5px;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .page-actions {
+        width: 100%;
+    }
+    
+    .page-actions .btn {
+        flex: 1;
+    }
+    
+    .report-title {
+        max-width: 150px;
+    }
+    
+    .table-responsive {
+        font-size: 14px;
+    }
+}
+</style>
+{% endblock %}

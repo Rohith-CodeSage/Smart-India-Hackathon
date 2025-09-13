@@ -1,0 +1,843 @@
+{% extends 'base.html' %}
+
+{% block title %}Map View - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <h1>
+                <i class="fas fa-map"></i>
+                Interactive Report Map
+            </h1>
+            <p>Visualize all citizen reports by location with clustering and filtering</p>
+        </div>
+        <div class="page-actions">
+            <button id="toggleClustering" class="btn btn-outline-primary">
+                <i class="fas fa-layer-group"></i>
+                Toggle Clustering
+            </button>
+            <button id="fitAllReports" class="btn btn-outline-secondary">
+                <i class="fas fa-expand-arrows-alt"></i>
+                Fit All
+            </button>
+            <a href="/admin/dashboard/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Map Controls -->
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select id="statusFilterMap" class="form-control form-control-sm">
+                                <option value="">All Statuses</option>
+                                <option value="pending">Pending</option>
+                                <option value="in_progress">In Progress</option>
+                                <option value="resolved">Resolved</option>
+                                <option value="closed">Closed</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="categoryFilterMap" class="form-control form-control-sm">
+                                <option value="">All Categories</option>
+                                <option value="pothole">Potholes</option>
+                                <option value="streetlight">Street Lighting</option>
+                                <option value="garbage">Garbage</option>
+                                <option value="water">Water Issues</option>
+                                <option value="noise">Noise</option>
+                                <option value="graffiti">Graffiti</option>
+                                <option value="traffic">Traffic</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="priorityFilterMap" class="form-control form-control-sm">
+                                <option value="">All Priorities</option>
+                                <option value="high">High Priority</option>
+                                <option value="medium">Medium Priority</option>
+                                <option value="low">Low Priority</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button id="applyMapFilters" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-filter"></i>
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="row text-center">
+                        <div class="col-3">
+                            <div class="map-stat">
+                                <div class="stat-number" id="totalReports">0</div>
+                                <div class="stat-label">Total</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="map-stat">
+                                <div class="stat-number text-warning" id="pendingReports">0</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="map-stat">
+                                <div class="stat-number text-primary" id="inProgressReports">0</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                        </div>
+                        <div class="col-3">
+                            <div class="map-stat">
+                                <div class="stat-number text-success" id="resolvedReports">0</div>
+                                <div class="stat-label">Resolved</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map Container -->
+    <div class="row">
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div id="reportsMap" style="height: 70vh;"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <!-- Legend -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        Legend
+                    </h6>
+                </div>
+                <div class="card-body p-3">
+                    <div class="legend-item">
+                        <div class="legend-marker pending"></div>
+                        <span>Pending Reports</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker in-progress"></div>
+                        <span>In Progress</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker resolved"></div>
+                        <span>Resolved</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker closed"></div>
+                        <span>Closed</span>
+                    </div>
+                    <hr>
+                    <div class="legend-item">
+                        <div class="legend-marker high-priority"></div>
+                        <span>High Priority</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker cluster"></div>
+                        <span>Multiple Reports</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected Report Info -->
+            <div class="card" id="selectedReportCard" style="display: none;">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-map-pin"></i>
+                        Selected Report
+                    </h6>
+                </div>
+                <div class="card-body p-3" id="selectedReportInfo">
+                    <!-- Dynamic content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+class ReportMap {
+    constructor() {
+        this.map = null;
+        this.markersGroup = null;
+        this.clusterGroup = null;
+        this.reports = [];
+        this.filteredReports = [];
+        this.clusteringEnabled = true;
+        this.filters = {};
+        this.selectedReport = null;
+        this.init();
+    }
+
+    init() {
+        this.initMap();
+        this.setupEventListeners();
+        this.loadReports();
+    }
+
+    initMap() {
+        // Initialize map centered on a default location
+        this.map = L.map('reportsMap').setView([40.7128, -74.0060], 12);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(this.map);
+
+        // Initialize marker groups
+        this.markersGroup = L.layerGroup().addTo(this.map);
+        
+        // Initialize cluster group with fallback
+        try {
+            if (typeof L.markerClusterGroup !== 'undefined') {
+                this.clusterGroup = L.markerClusterGroup({
+                    chunkedLoading: true,
+                    chunkProgress: this.updateLoadingProgress.bind(this)
+                });
+            } else {
+                // Fallback to regular layer group if clustering not available
+                this.clusterGroup = L.layerGroup();
+                this.clusteringEnabled = false;
+                console.warn('MarkerCluster plugin not available, using regular markers');
+            }
+        } catch (error) {
+            console.warn('Error initializing marker clustering:', error);
+            this.clusterGroup = L.layerGroup();
+            this.clusteringEnabled = false;
+        }
+
+        // Add map controls
+        this.addMapControls();
+    }
+
+    addMapControls() {
+        // Custom control for quick stats
+        const StatsControl = L.Control.extend({
+            onAdd: function(map) {
+                const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+                div.innerHTML = `
+                    <div class="map-control-stats">
+                        <div class="control-title">Quick Stats</div>
+                        <div id="mapControlStats">Loading...</div>
+                    </div>
+                `;
+                div.style.background = 'white';
+                div.style.padding = '10px';
+                div.style.minWidth = '150px';
+                return div;
+            }
+        });
+
+        new StatsControl({ position: 'topright' }).addTo(this.map);
+    }
+
+    setupEventListeners() {
+        document.getElementById('applyMapFilters').addEventListener('click', () => {
+            this.applyFilters();
+        });
+
+        document.getElementById('toggleClustering').addEventListener('click', () => {
+            this.toggleClustering();
+        });
+
+        document.getElementById('fitAllReports').addEventListener('click', () => {
+            this.fitAllReports();
+        });
+
+        // Handle URL parameters for specific report highlighting
+        const urlParams = new URLSearchParams(window.location.search);
+        const reportId = urlParams.get('report');
+        if (reportId) {
+            this.highlightReportId = reportId;
+        }
+    }
+
+    async loadReports() {
+        try {
+            const token = localStorage.getItem('authToken');
+            const response = await fetch('/api/reports/', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load reports');
+            }
+
+            const data = await response.json();
+            this.reports = data.results || data;
+            this.filteredReports = [...this.reports];
+
+            this.updateMapMarkers();
+            this.updateStats();
+            this.centerMapOnReports();
+
+            // Highlight specific report if requested
+            if (this.highlightReportId) {
+                this.highlightSpecificReport(this.highlightReportId);
+            }
+
+        } catch (error) {
+            console.error('Error loading reports:', error);
+            showToast('Failed to load map data', 'error');
+        }
+    }
+
+    applyFilters() {
+        this.filters = {};
+        
+        const status = document.getElementById('statusFilterMap').value;
+        const category = document.getElementById('categoryFilterMap').value;
+        const priority = document.getElementById('priorityFilterMap').value;
+
+        if (status) this.filters.status = status;
+        if (category) this.filters.category = category;
+        if (priority) this.filters.priority = priority;
+
+        this.filteredReports = this.reports.filter(report => {
+            return (!this.filters.status || report.status === this.filters.status) &&
+                   (!this.filters.category || report.category === this.filters.category) &&
+                   (!this.filters.priority || report.priority === this.filters.priority);
+        });
+
+        this.updateMapMarkers();
+        this.updateStats();
+    }
+
+    updateMapMarkers() {
+        // Clear existing markers
+        this.markersGroup.clearLayers();
+        this.clusterGroup.clearLayers();
+
+        // Create markers for filtered reports
+        this.filteredReports.forEach(report => {
+            if (report.latitude && report.longitude) {
+                const marker = this.createMarker(report);
+                
+                if (this.clusteringEnabled) {
+                    this.clusterGroup.addLayer(marker);
+                } else {
+                    this.markersGroup.addLayer(marker);
+                }
+            }
+        });
+
+        // Add appropriate layer to map
+        if (this.clusteringEnabled && !this.map.hasLayer(this.clusterGroup)) {
+            this.map.removeLayer(this.markersGroup);
+            this.map.addLayer(this.clusterGroup);
+        } else if (!this.clusteringEnabled && !this.map.hasLayer(this.markersGroup)) {
+            this.map.removeLayer(this.clusterGroup);
+            this.map.addLayer(this.markersGroup);
+        }
+    }
+
+    createMarker(report) {
+        const icon = this.getMarkerIcon(report);
+        const marker = L.marker([report.latitude, report.longitude], { icon });
+        
+        // Create popup content
+        const popupContent = this.createPopupContent(report);
+        marker.bindPopup(popupContent, { maxWidth: 300 });
+        
+        // Add click event
+        marker.on('click', () => {
+            this.selectReport(report);
+        });
+
+        // Store report data with marker
+        marker.reportData = report;
+        
+        return marker;
+    }
+
+    getMarkerIcon(report) {
+        let color = '#6c757d'; // Default gray
+        let icon = 'fa-exclamation-circle';
+        
+        // Color by status
+        switch (report.status) {
+            case 'pending':
+                color = '#ffc107'; // Warning yellow
+                break;
+            case 'in_progress':
+                color = '#0d6efd'; // Primary blue
+                break;
+            case 'resolved':
+                color = '#198754'; // Success green
+                break;
+            case 'closed':
+                color = '#6c757d'; // Secondary gray
+                break;
+        }
+
+        // Icon by category
+        const categoryIcons = {
+            'pothole': 'fa-road',
+            'streetlight': 'fa-lightbulb',
+            'garbage': 'fa-trash',
+            'water': 'fa-tint',
+            'noise': 'fa-volume-up',
+            'graffiti': 'fa-spray-can',
+            'traffic': 'fa-car',
+            'other': 'fa-exclamation-circle'
+        };
+        
+        icon = categoryIcons[report.category] || icon;
+
+        // Special styling for high priority
+        const borderColor = report.priority === 'high' ? '#dc3545' : color;
+        const borderWidth = report.priority === 'high' ? 3 : 1;
+
+        return L.divIcon({
+            className: 'custom-marker',
+            html: `
+                <div class="marker-pin" style="background-color: ${color}; border-color: ${borderColor}; border-width: ${borderWidth}px;">
+                    <i class="fas ${icon}"></i>
+                </div>
+            `,
+            iconSize: [30, 40],
+            iconAnchor: [15, 40],
+            popupAnchor: [0, -40]
+        });
+    }
+
+    createPopupContent(report) {
+        const date = new Date(report.created_at).toLocaleDateString();
+        const statusBadge = this.getStatusBadge(report.status);
+        const priorityBadge = this.getPriorityBadge(report.priority);
+        
+        return `
+            <div class="report-popup">
+                <div class="popup-header">
+                    <h6><strong>#${report.id}</strong> ${report.title}</h6>
+                    <div class="popup-badges">
+                        ${statusBadge}
+                        ${priorityBadge}
+                    </div>
+                </div>
+                <div class="popup-body">
+                    <p><strong>Category:</strong> ${this.formatCategory(report.category)}</p>
+                    <p><strong>Citizen:</strong> ${report.citizen.username}</p>
+                    <p><strong>Date:</strong> ${date}</p>
+                    <p><strong>Description:</strong> ${report.description.substring(0, 100)}${report.description.length > 100 ? '...' : ''}</p>
+                </div>
+                <div class="popup-actions">
+                    <button class="btn btn-sm btn-primary" onclick="window.reportMap.viewReportDetails(${report.id})">
+                        <i class="fas fa-eye"></i> View Details
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="window.reportMap.centerOnReport(${report.id})">
+                        <i class="fas fa-crosshairs"></i> Center
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    getStatusBadge(status) {
+        const statusLabels = {
+            'pending': { label: 'Pending', class: 'warning' },
+            'in_progress': { label: 'In Progress', class: 'primary' },
+            'resolved': { label: 'Resolved', class: 'success' },
+            'closed': { label: 'Closed', class: 'secondary' }
+        };
+        
+        const statusInfo = statusLabels[status] || { label: status, class: 'secondary' };
+        return `<span class="badge bg-${statusInfo.class}">${statusInfo.label}</span>`;
+    }
+
+    getPriorityBadge(priority) {
+        const priorityLabels = {
+            'high': { label: 'High', class: 'danger' },
+            'medium': { label: 'Medium', class: 'warning' },
+            'low': { label: 'Low', class: 'success' }
+        };
+        
+        const priorityInfo = priorityLabels[priority] || { label: priority, class: 'secondary' };
+        return `<span class="badge bg-${priorityInfo.class}">${priorityInfo.label}</span>`;
+    }
+
+    formatCategory(category) {
+        return category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    selectReport(report) {
+        this.selectedReport = report;
+        this.showSelectedReportInfo(report);
+    }
+
+    showSelectedReportInfo(report) {
+        const card = document.getElementById('selectedReportCard');
+        const info = document.getElementById('selectedReportInfo');
+        
+        const date = new Date(report.created_at).toLocaleDateString();
+        
+        info.innerHTML = `
+            <div class="selected-report-details">
+                <h6><strong>#${report.id}</strong></h6>
+                <p class="mb-2">${report.title}</p>
+                <div class="mb-2">
+                    ${this.getStatusBadge(report.status)}
+                    ${this.getPriorityBadge(report.priority)}
+                </div>
+                <p><strong>Category:</strong> ${this.formatCategory(report.category)}</p>
+                <p><strong>Citizen:</strong> ${report.citizen.username}</p>
+                <p><strong>Date:</strong> ${date}</p>
+                <p><strong>Address:</strong> ${report.address}</p>
+                <div class="selected-report-actions">
+                    <button class="btn btn-sm btn-primary w-100 mb-2" onclick="window.reportMap.viewReportDetails(${report.id})">
+                        <i class="fas fa-eye"></i> View Full Details
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary w-100" onclick="window.reportMap.clearSelection()">
+                        <i class="fas fa-times"></i> Clear Selection
+                    </button>
+                </div>
+            </div>
+        `;
+        
+        card.style.display = 'block';
+    }
+
+    clearSelection() {
+        this.selectedReport = null;
+        document.getElementById('selectedReportCard').style.display = 'none';
+    }
+
+    viewReportDetails(reportId) {
+        // Open report in management interface
+        window.open(`/admin/reports/?report=${reportId}`, '_blank');
+    }
+
+    centerOnReport(reportId) {
+        const report = this.filteredReports.find(r => r.id === reportId);
+        if (report && report.latitude && report.longitude) {
+            this.map.setView([report.latitude, report.longitude], 18);
+        }
+    }
+
+    highlightSpecificReport(reportId) {
+        setTimeout(() => {
+            const report = this.reports.find(r => r.id == reportId);
+            if (report) {
+                this.centerOnReport(reportId);
+                this.selectReport(report);
+            }
+        }, 1000);
+    }
+
+    toggleClustering() {
+        this.clusteringEnabled = !this.clusteringEnabled;
+        
+        const btn = document.getElementById('toggleClustering');
+        if (this.clusteringEnabled) {
+            btn.innerHTML = '<i class="fas fa-layer-group"></i> Disable Clustering';
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-primary');
+        } else {
+            btn.innerHTML = '<i class="fas fa-layer-group"></i> Enable Clustering';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline-primary');
+        }
+        
+        this.updateMapMarkers();
+    }
+
+    fitAllReports() {
+        if (this.filteredReports.length === 0) return;
+        
+        const group = new L.featureGroup();
+        
+        this.filteredReports.forEach(report => {
+            if (report.latitude && report.longitude) {
+                group.addLayer(L.marker([report.latitude, report.longitude]));
+            }
+        });
+        
+        if (group.getLayers().length > 0) {
+            this.map.fitBounds(group.getBounds().pad(0.1));
+        }
+    }
+
+    centerMapOnReports() {
+        if (this.reports.length === 0) return;
+        
+        const validReports = this.reports.filter(r => r.latitude && r.longitude);
+        if (validReports.length === 0) return;
+        
+        if (validReports.length === 1) {
+            this.map.setView([validReports[0].latitude, validReports[0].longitude], 15);
+        } else {
+            this.fitAllReports();
+        }
+    }
+
+    updateStats() {
+        const total = this.filteredReports.length;
+        const pending = this.filteredReports.filter(r => r.status === 'pending').length;
+        const inProgress = this.filteredReports.filter(r => r.status === 'in_progress').length;
+        const resolved = this.filteredReports.filter(r => r.status === 'resolved').length;
+        
+        document.getElementById('totalReports').textContent = total;
+        document.getElementById('pendingReports').textContent = pending;
+        document.getElementById('inProgressReports').textContent = inProgress;
+        document.getElementById('resolvedReports').textContent = resolved;
+        
+        // Update map control stats
+        const mapControlStats = document.getElementById('mapControlStats');
+        if (mapControlStats) {
+            mapControlStats.innerHTML = `
+                <div style="font-size: 12px;">
+                    <div>Showing: ${total}</div>
+                    <div>Pending: ${pending}</div>
+                    <div>Active: ${inProgress}</div>
+                </div>
+            `;
+        }
+    }
+
+    updateLoadingProgress(processed, total, elapsed) {
+        // Optional: show loading progress for large datasets
+        if (total > 100) {
+            console.log(`Loading markers: ${processed}/${total} (${elapsed}ms)`);
+        }
+    }
+}
+
+// Initialize map when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.reportMap = new ReportMap();
+});
+</script>
+
+<style>
+.container-fluid {
+    max-width: 1400px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.page-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.page-title p {
+    margin: 0.5rem 0 0 0;
+    color: var(--text-muted);
+}
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.map-stat {
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 14px;
+}
+
+.legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+    border: 1px solid #333;
+}
+
+.legend-marker.pending { background-color: #ffc107; }
+.legend-marker.in-progress { background-color: #0d6efd; }
+.legend-marker.resolved { background-color: #198754; }
+.legend-marker.closed { background-color: #6c757d; }
+.legend-marker.high-priority { 
+    background-color: #dc3545; 
+    border: 2px solid #721c24;
+}
+.legend-marker.cluster { 
+    background-color: #20c997; 
+    border-radius: 3px;
+}
+
+/* Custom marker styles */
+.custom-marker {
+    background: transparent;
+    border: none;
+}
+
+.marker-pin {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    position: relative;
+    transform: rotate(-45deg);
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.marker-pin i {
+    transform: rotate(45deg);
+    color: white;
+    font-size: 12px;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.5);
+}
+
+/* Popup styles */
+.report-popup {
+    font-size: 14px;
+}
+
+.popup-header {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 8px;
+    margin-bottom: 8px;
+}
+
+.popup-header h6 {
+    margin: 0 0 5px 0;
+    font-size: 16px;
+}
+
+.popup-badges {
+    display: flex;
+    gap: 5px;
+}
+
+.popup-body p {
+    margin: 5px 0;
+}
+
+.popup-actions {
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.popup-actions .btn {
+    font-size: 12px;
+    padding: 4px 8px;
+}
+
+.selected-report-details {
+    font-size: 14px;
+}
+
+.selected-report-actions {
+    margin-top: 15px;
+}
+
+/* Map control styles */
+.map-control-stats {
+    font-size: 12px;
+}
+
+.control-title {
+    font-weight: bold;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 3px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .page-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .page-actions .btn {
+        flex: 1;
+        margin: 0 2px;
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    #reportsMap {
+        height: 50vh !important;
+    }
+    
+    .col-md-3,
+    .col-md-9 {
+        margin-bottom: 15px;
+    }
+}
+
+/* Leaflet popup responsive fixes */
+.leaflet-popup-content-wrapper {
+    max-width: 90vw;
+}
+
+@media (max-width: 480px) {
+    .leaflet-popup-content {
+        margin: 8px 10px;
+    }
+    
+    .popup-actions {
+        flex-direction: column;
+    }
+    
+    .popup-actions .btn {
+        width: 100%;
+        margin-bottom: 5px;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Civic Issue Reporting System{% endblock %}</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-city"></i>
+                <span>Civic Reports</span>
+            </div>
+            
+            <div class="nav-menu" id="nav-menu">
+                {% if user.is_authenticated %}
+                    {% if user.is_admin %}
+                        <a href="/admin/dashboard/" class="nav-link">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                        <a href="/admin/reports/" class="nav-link">
+                            <i class="fas fa-list"></i> All Reports
+                        </a>
+                        <a href="/admin/analytics/" class="nav-link">
+                            <i class="fas fa-chart-bar"></i> Analytics
+                        </a>
+                        <a href="/admin/map/" class="nav-link">
+                            <i class="fas fa-map"></i> Map View
+                        </a>
+                    {% else %}
+                        <a href="/citizen/dashboard/" class="nav-link">
+                            <i class="fas fa-home"></i> My Reports
+                        </a>
+                        <a href="/citizen/submit/" class="nav-link">
+                            <i class="fas fa-plus"></i> Submit Report
+                        </a>
+                    {% endif %}
+                    
+                    <div class="nav-user">
+                        <span class="user-info">
+                            <i class="fas fa-user"></i>
+                            {{ user.username }}
+                            <span class="user-role">({{ user.get_role_display }})</span>
+                        </span>
+                        <a href="/logout/" class="logout-btn">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </a>
+                    </div>
+                {% else %}
+                    <a href="/login/" class="nav-link">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="/register/" class="nav-link">
+                        <i class="fas fa-user-plus"></i> Register
+                    </a>
+                {% endif %}
+            </div>
+            
+            <div class="nav-toggle" id="nav-toggle">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="loading-spinner hidden">
+        <div class="spinner"></div>
+        <span>Loading...</span>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="/static/js/main.js"></script>
+    <script src="/static/js/auth.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

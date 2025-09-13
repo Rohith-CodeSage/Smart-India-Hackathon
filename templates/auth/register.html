@@ -1,0 +1,208 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - Civic Issue Reporting System{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-user-plus"></i>
+                        Create Your Account
+                    </h2>
+                </div>
+                
+                <form id="register-form" class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" 
+                                       id="first_name" 
+                                       name="first_name" 
+                                       class="form-control" 
+                                       required
+                                       autocomplete="given-name">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" 
+                                       id="last_name" 
+                                       name="last_name" 
+                                       class="form-control" 
+                                       required
+                                       autocomplete="family-name">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" 
+                               id="username" 
+                               name="username" 
+                               class="form-control" 
+                               required
+                               autocomplete="username">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" 
+                               id="email" 
+                               name="email" 
+                               class="form-control" 
+                               required
+                               autocomplete="email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone_number" class="form-label">Phone Number (Optional)</label>
+                        <input type="tel" 
+                               id="phone_number" 
+                               name="phone_number" 
+                               class="form-control"
+                               autocomplete="tel">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" 
+                                       id="password" 
+                                       name="password" 
+                                       class="form-control" 
+                                       required
+                                       minlength="8"
+                                       autocomplete="new-password">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="confirm_password" class="form-label">Confirm Password</label>
+                                <input type="password" 
+                                       id="confirm_password" 
+                                       name="confirm_password" 
+                                       class="form-control" 
+                                       required
+                                       minlength="8"
+                                       autocomplete="new-password">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="form-check">
+                            <input type="checkbox" 
+                                   id="terms_agreement" 
+                                   name="terms_agreement" 
+                                   class="form-check-input" 
+                                   required>
+                            <label for="terms_agreement" class="form-check-label">
+                                I agree to the Terms of Service and Privacy Policy
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-primary w-full">
+                            <i class="fas fa-user-plus"></i>
+                            Create Account
+                        </button>
+                    </div>
+                    
+                    <div class="text-center">
+                        <p>Already have an account? 
+                           <a href="/login/" class="text-primary">Login here</a>
+                        </p>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    margin: 2rem 0;
+}
+
+.col-md-6 {
+    flex: 1;
+    min-width: 250px;
+}
+
+.col-md-8 {
+    width: 100%;
+    max-width: 700px;
+}
+
+.form-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.form-check-input {
+    margin-top: 0.2rem;
+}
+
+.form-check-label {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.text-primary {
+    color: #667eea;
+    text-decoration: none;
+}
+
+.text-primary:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+    .col-md-6 {
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus on first name field
+    const firstNameField = document.getElementById('first_name');
+    if (firstNameField) {
+        firstNameField.focus();
+    }
+    
+    // Password confirmation validation
+    const passwordField = document.getElementById('password');
+    const confirmPasswordField = document.getElementById('confirm_password');
+    
+    function validatePasswordMatch() {
+        if (confirmPasswordField.value && passwordField.value !== confirmPasswordField.value) {
+            confirmPasswordField.setCustomValidity('Passwords do not match');
+        } else {
+            confirmPasswordField.setCustomValidity('');
+        }
+    }
+    
+    passwordField.addEventListener('input', validatePasswordMatch);
+    confirmPasswordField.addEventListener('input', validatePasswordMatch);
+});
+</script>
+{% endblock %}

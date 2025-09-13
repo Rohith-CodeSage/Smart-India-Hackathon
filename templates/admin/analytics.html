@@ -1,0 +1,1013 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="page-title">
+            <h1>
+                <i class="fas fa-chart-bar"></i>
+                Analytics Dashboard
+            </h1>
+            <p>Comprehensive insights into civic reporting trends and performance</p>
+        </div>
+        <div class="page-actions">
+            <button id="exportData" class="btn btn-outline-success">
+                <i class="fas fa-download"></i>
+                Export Data
+            </button>
+            <button id="refreshAnalytics" class="btn btn-outline-primary">
+                <i class="fas fa-sync"></i>
+                Refresh
+            </button>
+            <a href="/admin/dashboard/" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i>
+                Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Time Range Selector -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body p-3">
+                    <div class="row align-items-end">
+                        <div class="col-md-3">
+                            <label class="form-label">Time Period</label>
+                            <select id="timePeriod" class="form-control">
+                                <option value="7">Last 7 Days</option>
+                                <option value="30" selected>Last 30 Days</option>
+                                <option value="90">Last 3 Months</option>
+                                <option value="365">Last Year</option>
+                                <option value="custom">Custom Range</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3" id="customDateRange" style="display: none;">
+                            <label class="form-label">Date Range</label>
+                            <div class="input-group">
+                                <input type="date" id="startDate" class="form-control">
+                                <span class="input-group-text">to</span>
+                                <input type="date" id="endDate" class="form-control">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Department</label>
+                            <select id="departmentFilter" class="form-control">
+                                <option value="">All Departments</option>
+                                <option value="1">Public Works</option>
+                                <option value="2">Transportation</option>
+                                <option value="3">Environmental</option>
+                                <option value="4">Public Safety</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button id="applyAnalyticsFilters" class="btn btn-primary w-100">
+                                <i class="fas fa-filter"></i>
+                                Apply Filters
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics Row -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-primary">
+                    <i class="fas fa-clipboard-list"></i>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-number" id="totalReportsMetric">0</div>
+                    <div class="metric-label">Total Reports</div>
+                    <div class="metric-change" id="totalReportsChange">
+                        <i class="fas fa-arrow-up"></i> +0%
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-success">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-number" id="resolvedReportsMetric">0</div>
+                    <div class="metric-label">Resolved Reports</div>
+                    <div class="metric-change" id="resolvedReportsChange">
+                        <i class="fas fa-arrow-up"></i> +0%
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-info">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-number" id="avgResponseTime">0</div>
+                    <div class="metric-label">Avg Response Time</div>
+                    <div class="metric-change" id="avgResponseTimeChange">
+                        <i class="fas fa-arrow-down"></i> -0%
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="metric-card">
+                <div class="metric-icon bg-warning">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="metric-content">
+                    <div class="metric-number" id="activeCitizens">0</div>
+                    <div class="metric-label">Active Citizens</div>
+                    <div class="metric-change" id="activeCitizensChange">
+                        <i class="fas fa-arrow-up"></i> +0%
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-line"></i>
+                        Reports Timeline
+                    </h5>
+                    <div class="chart-controls">
+                        <button class="btn btn-sm btn-outline-secondary" onclick="window.analytics.toggleChartType('reportsTimeline')">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <canvas id="reportsTimelineChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Status Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        Reports by Category
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Priority Distribution
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 3 -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-area"></i>
+                        Department Performance
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="departmentPerformanceChart" height="100"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-chart-pie"></i>
+                        Response Time Analysis
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="responseTimeChart"></canvas>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <div><strong>Avg:</strong> <span id="avgResponseTimeDisplay">0 days</span></div>
+                            <div><strong>Median:</strong> <span id="medianResponseTimeDisplay">0 days</span></div>
+                            <div><strong>90th Percentile:</strong> <span id="p90ResponseTimeDisplay">0 days</span></div>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Tables Row -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-trophy"></i>
+                        Top Performing Departments
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Department</th>
+                                    <th>Resolved</th>
+                                    <th>Avg Time</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topDepartmentsTable">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">
+                        <i class="fas fa-fire"></i>
+                        Report Hotspots
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Location</th>
+                                    <th>Reports</th>
+                                    <th>Categories</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hotspotsTable">
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/date-fns@2.29.3/index.min.js"></script>
+
+<script>
+class Analytics {
+    constructor() {
+        this.charts = {};
+        this.analyticsData = {};
+        this.filters = {
+            timePeriod: 30,
+            department: '',
+            startDate: null,
+            endDate: null
+        };
+        this.init();
+    }
+
+    init() {
+        this.setupEventListeners();
+        this.loadAnalyticsData();
+    }
+
+    setupEventListeners() {
+        document.getElementById('timePeriod').addEventListener('change', (e) => {
+            this.handleTimePeriodChange(e.target.value);
+        });
+
+        document.getElementById('applyAnalyticsFilters').addEventListener('click', () => {
+            this.applyFilters();
+        });
+
+        document.getElementById('refreshAnalytics').addEventListener('click', () => {
+            this.loadAnalyticsData();
+        });
+
+        document.getElementById('exportData').addEventListener('click', () => {
+            this.exportData();
+        });
+    }
+
+    handleTimePeriodChange(period) {
+        const customRange = document.getElementById('customDateRange');
+        if (period === 'custom') {
+            customRange.style.display = 'block';
+        } else {
+            customRange.style.display = 'none';
+            this.filters.timePeriod = parseInt(period);
+        }
+    }
+
+    applyFilters() {
+        const timePeriod = document.getElementById('timePeriod').value;
+        const department = document.getElementById('departmentFilter').value;
+
+        this.filters.department = department;
+
+        if (timePeriod === 'custom') {
+            this.filters.startDate = document.getElementById('startDate').value;
+            this.filters.endDate = document.getElementById('endDate').value;
+            this.filters.timePeriod = null;
+        } else {
+            this.filters.timePeriod = parseInt(timePeriod);
+            this.filters.startDate = null;
+            this.filters.endDate = null;
+        }
+
+        this.loadAnalyticsData();
+    }
+
+    async loadAnalyticsData() {
+        try {
+            const token = localStorage.getItem('authToken');
+            const queryParams = new URLSearchParams();
+
+            if (this.filters.timePeriod) {
+                queryParams.append('days', this.filters.timePeriod);
+            }
+            if (this.filters.startDate) {
+                queryParams.append('start_date', this.filters.startDate);
+            }
+            if (this.filters.endDate) {
+                queryParams.append('end_date', this.filters.endDate);
+            }
+            if (this.filters.department) {
+                queryParams.append('department', this.filters.department);
+            }
+
+            const response = await fetch(`/api/analytics/?${queryParams}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to load analytics data');
+            }
+
+            this.analyticsData = await response.json();
+            this.updateMetrics();
+            this.updateCharts();
+            this.updateTables();
+
+        } catch (error) {
+            console.error('Error loading analytics:', error);
+            showToast('Failed to load analytics data', 'error');
+        }
+    }
+
+    updateMetrics() {
+        const data = this.analyticsData;
+        
+        // Update metric displays
+        document.getElementById('totalReportsMetric').textContent = data.total_reports || 0;
+        document.getElementById('resolvedReportsMetric').textContent = data.resolved_reports || 0;
+        document.getElementById('avgResponseTime').textContent = this.formatDuration(data.avg_response_time);
+        document.getElementById('activeCitizens').textContent = data.active_citizens || 0;
+
+        // Update trend indicators
+        this.updateTrendIndicator('totalReportsChange', data.total_reports_change);
+        this.updateTrendIndicator('resolvedReportsChange', data.resolved_reports_change);
+        this.updateTrendIndicator('avgResponseTimeChange', data.avg_response_time_change, true);
+        this.updateTrendIndicator('activeCitizensChange', data.active_citizens_change);
+    }
+
+    updateTrendIndicator(elementId, change, inverse = false) {
+        const element = document.getElementById(elementId);
+        const isPositive = inverse ? change < 0 : change > 0;
+        const arrow = isPositive ? 'fa-arrow-up' : 'fa-arrow-down';
+        const color = isPositive ? 'text-success' : 'text-danger';
+        const sign = change > 0 ? '+' : '';
+        
+        element.className = `metric-change ${color}`;
+        element.innerHTML = `<i class="fas ${arrow}"></i> ${sign}${change}%`;
+    }
+
+    updateCharts() {
+        this.createReportsTimelineChart();
+        this.createStatusDistributionChart();
+        this.createCategoryChart();
+        this.createPriorityChart();
+        this.createDepartmentPerformanceChart();
+        this.createResponseTimeChart();
+    }
+
+    createReportsTimelineChart() {
+        const ctx = document.getElementById('reportsTimelineChart').getContext('2d');
+        
+        if (this.charts.reportsTimeline) {
+            this.charts.reportsTimeline.destroy();
+        }
+
+        const data = this.analyticsData.timeline || [];
+        
+        this.charts.reportsTimeline = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: data.map(d => d.date),
+                datasets: [
+                    {
+                        label: 'New Reports',
+                        data: data.map(d => d.new_reports),
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Resolved',
+                        data: data.map(d => d.resolved),
+                        borderColor: '#198754',
+                        backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    createStatusDistributionChart() {
+        const ctx = document.getElementById('statusDistributionChart').getContext('2d');
+        
+        if (this.charts.statusDistribution) {
+            this.charts.statusDistribution.destroy();
+        }
+
+        const data = this.analyticsData.status_distribution || {};
+        
+        this.charts.statusDistribution = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Pending', 'In Progress', 'Resolved', 'Closed'],
+                datasets: [{
+                    data: [
+                        data.pending || 0,
+                        data.in_progress || 0,
+                        data.resolved || 0,
+                        data.closed || 0
+                    ],
+                    backgroundColor: [
+                        '#ffc107',
+                        '#0d6efd',
+                        '#198754',
+                        '#6c757d'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    createCategoryChart() {
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        
+        if (this.charts.category) {
+            this.charts.category.destroy();
+        }
+
+        const data = this.analyticsData.category_distribution || {};
+        const labels = Object.keys(data).map(k => this.formatCategory(k));
+        const values = Object.values(data);
+        
+        this.charts.category = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Reports',
+                    data: values,
+                    backgroundColor: [
+                        '#0d6efd', '#198754', '#ffc107', '#dc3545',
+                        '#6f42c1', '#fd7e14', '#20c997', '#6c757d'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    createPriorityChart() {
+        const ctx = document.getElementById('priorityChart').getContext('2d');
+        
+        if (this.charts.priority) {
+            this.charts.priority.destroy();
+        }
+
+        const data = this.analyticsData.priority_distribution || {};
+        
+        this.charts.priority = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['High', 'Medium', 'Low'],
+                datasets: [{
+                    data: [
+                        data.high || 0,
+                        data.medium || 0,
+                        data.low || 0
+                    ],
+                    backgroundColor: [
+                        '#dc3545',
+                        '#ffc107',
+                        '#198754'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    createDepartmentPerformanceChart() {
+        const ctx = document.getElementById('departmentPerformanceChart').getContext('2d');
+        
+        if (this.charts.departmentPerformance) {
+            this.charts.departmentPerformance.destroy();
+        }
+
+        const data = this.analyticsData.department_performance || [];
+        
+        this.charts.departmentPerformance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: data.map(d => d.name),
+                datasets: [
+                    {
+                        label: 'Total Reports',
+                        data: data.map(d => d.total_reports),
+                        backgroundColor: 'rgba(13, 110, 253, 0.6)',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Resolved',
+                        data: data.map(d => d.resolved_reports),
+                        backgroundColor: 'rgba(25, 135, 84, 0.6)',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Avg Response Time (days)',
+                        data: data.map(d => d.avg_response_time),
+                        type: 'line',
+                        borderColor: '#dc3545',
+                        backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        beginAtZero: true
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                }
+            }
+        });
+    }
+
+    createResponseTimeChart() {
+        const ctx = document.getElementById('responseTimeChart').getContext('2d');
+        
+        if (this.charts.responseTime) {
+            this.charts.responseTime.destroy();
+        }
+
+        const data = this.analyticsData.response_time_analysis || {};
+        
+        this.charts.responseTime = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['< 1 day', '1-3 days', '4-7 days', '> 7 days'],
+                datasets: [{
+                    data: [
+                        data.within_1_day || 0,
+                        data.within_3_days || 0,
+                        data.within_7_days || 0,
+                        data.over_7_days || 0
+                    ],
+                    backgroundColor: [
+                        '#198754',
+                        '#20c997',
+                        '#ffc107',
+                        '#dc3545'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Update response time stats
+        document.getElementById('avgResponseTimeDisplay').textContent = 
+            this.formatDuration(data.avg_response_time);
+        document.getElementById('medianResponseTimeDisplay').textContent = 
+            this.formatDuration(data.median_response_time);
+        document.getElementById('p90ResponseTimeDisplay').textContent = 
+            this.formatDuration(data.p90_response_time);
+    }
+
+    updateTables() {
+        this.updateTopDepartmentsTable();
+        this.updateHotspotsTable();
+    }
+
+    updateTopDepartmentsTable() {
+        const tbody = document.getElementById('topDepartmentsTable');
+        const departments = this.analyticsData.department_performance || [];
+        
+        // Sort by performance score (resolved/total * speed factor)
+        const sortedDepartments = departments
+            .map(dept => ({
+                ...dept,
+                score: dept.total_reports > 0 ? 
+                    Math.round((dept.resolved_reports / dept.total_reports) * 100 * 
+                    (10 / Math.max(dept.avg_response_time, 1))) : 0
+            }))
+            .sort((a, b) => b.score - a.score);
+
+        tbody.innerHTML = sortedDepartments.map(dept => `
+            <tr>
+                <td>${dept.name}</td>
+                <td>${dept.resolved_reports}/${dept.total_reports}</td>
+                <td>${this.formatDuration(dept.avg_response_time)}</td>
+                <td>
+                    <span class="badge ${this.getScoreBadgeClass(dept.score)}">${dept.score}</span>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    updateHotspotsTable() {
+        const tbody = document.getElementById('hotspotsTable');
+        const hotspots = this.analyticsData.hotspots || [];
+        
+        tbody.innerHTML = hotspots.map(hotspot => `
+            <tr>
+                <td>
+                    <div style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
+                        ${hotspot.area}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-warning">${hotspot.count}</span>
+                </td>
+                <td>
+                    <small>${hotspot.categories.slice(0, 2).join(', ')}
+                    ${hotspot.categories.length > 2 ? '...' : ''}</small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary" 
+                            onclick="window.open('/admin/map/?area=${encodeURIComponent(hotspot.area)}', '_blank')">
+                        <i class="fas fa-map"></i>
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    getScoreBadgeClass(score) {
+        if (score >= 80) return 'bg-success';
+        if (score >= 60) return 'bg-warning';
+        return 'bg-danger';
+    }
+
+    formatCategory(category) {
+        return category.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+
+    formatDuration(days) {
+        if (!days) return '0 days';
+        if (days < 1) return '< 1 day';
+        return `${Math.round(days)} day${days !== 1 ? 's' : ''}`;
+    }
+
+    toggleChartType(chartName) {
+        const chart = this.charts[chartName];
+        if (chart) {
+            chart.config.type = chart.config.type === 'line' ? 'bar' : 'line';
+            chart.update();
+        }
+    }
+
+    exportData() {
+        const data = {
+            filters: this.filters,
+            analytics: this.analyticsData,
+            exported_at: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `civic_reports_analytics_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('Analytics data exported successfully', 'success');
+    }
+}
+
+// Initialize analytics when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    window.analytics = new Analytics();
+});
+</script>
+
+<style>
+.container-fluid {
+    max-width: 1400px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.5rem;
+}
+
+.page-title h1 {
+    margin: 0;
+    font-size: 1.8rem;
+}
+
+.page-title p {
+    margin: 0.5rem 0 0 0;
+    color: var(--text-muted);
+}
+
+.page-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.metric-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 100%;
+}
+
+.metric-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+}
+
+.metric-content {
+    flex: 1;
+}
+
+.metric-number {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+}
+
+.metric-label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.metric-change {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.chart-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.card-title i {
+    margin-right: 8px;
+    color: var(--primary);
+}
+
+/* Chart containers */
+canvas {
+    max-height: 400px;
+}
+
+/* Table styling */
+.table-sm th,
+.table-sm td {
+    padding: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Badge styling */
+.badge {
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .page-header {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .page-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .page-actions .btn {
+        flex: 1;
+        margin: 0 2px;
+        font-size: 12px;
+        padding: 6px 8px;
+    }
+    
+    .metric-card {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .metric-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 1.2rem;
+    }
+    
+    .metric-number {
+        font-size: 1.5rem;
+    }
+    
+    .row [class*="col-"] {
+        margin-bottom: 1rem;
+    }
+    
+    canvas {
+        max-height: 300px;
+    }
+}
+
+@media (max-width: 576px) {
+    .metric-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .metric-content {
+        width: 100%;
+    }
+    
+    canvas {
+        max-height: 250px;
+    }
+    
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
